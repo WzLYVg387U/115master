@@ -62,3 +62,48 @@ export function vttToBlobUrl(vtt: string): string {
   const blob = new Blob([vtt], { type: 'text/vtt; charset=utf-8' })
   return URL.createObjectURL(blob)
 }
+
+export function convertAssToVtt(assText: string): string {
+  const groupsMap = new Map<string, string[]>()
+
+  assText.split(/\r?\n/)
+    .forEach((line) => {
+      if (!line.startsWith('Dialogue:')) {
+        return
+      }
+      const parts = line.split(',')
+      if (parts.length < 10) {
+        return
+      }
+
+      const textField = parts.slice(9).join(',')
+      // 绘图指令
+      if (/\\p\d+/.test(textField))
+        return
+
+      const text = textField.replace(/\{[^}]+\}/g, '')
+        .replace(/\\N/gi, '\n')
+        .trim()
+      if (text.length === 0)
+        return
+
+      // 常见动画符号
+      if (/^[\u2500-\u259F\u25A0-\u25FF]+$/.test(text))
+        return
+
+      const startTime = parts[1]
+      const endTime = parts[2]
+      const time = `${startTime} --> ${endTime}`
+
+      /** 当多条字幕起止时间一致时,只有第一条会被显示,故合并 */
+      const group = groupsMap.get(time) || []
+      group.push(text)
+      groupsMap.set(time, group)
+    })
+
+  const result = Array.from(groupsMap.entries())
+    .map(([time, texts]) => {
+      return `${time}\n${texts.filter(Boolean).join('\n')}`
+    })
+  return result.join('\n\n')
+}

@@ -20,7 +20,7 @@ import { computed, shallowRef, watch } from 'vue'
 import { usePlayerContext } from '@/components/XPlayer/hooks/usePlayerProvide'
 import { clsx } from '@/utils/clsx'
 import { convertToUtf8Blob } from '@/utils/encoding'
-import { convertSrtToVtt } from '@/utils/subtitle/subtitleTool'
+import { convertAssToVtt, convertSrtToVtt } from '@/utils/subtitle/subtitleTool'
 
 const styles = clsx({
   container: 'absolute inset-0',
@@ -129,6 +129,9 @@ function parseSubtitle(text: string, format: Subtitle['format']) {
       break
     case 'vtt':
       formatedText = text
+      break
+    case 'ass':
+      formatedText = convertAssToVtt(text)
       break
     default:
       logger.warn('不支持的字幕格式:', format)
